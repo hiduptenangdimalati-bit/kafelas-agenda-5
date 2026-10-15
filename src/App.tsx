@@ -245,6 +245,13 @@ export default function App() {
     } catch {}
     return 'Iqbal Saefinnuha';
   });
+  const [activeUserEmail, setActiveUserEmail] = useState<string>(() => {
+    try {
+      const raw = localStorage.getItem(LOCAL_CACHE_KEY);
+      if (raw) return JSON.parse(raw).activeUserEmail || '';
+    } catch {}
+    return '';
+  });
 
   // Data Utama Workspace (Disimpan di RAM + LocalStorage Cache agar 0 Read saat pindah menu)
   const initialDemo = useMemo(() => generateDemoWorkspace('FOTO'), []);
@@ -260,7 +267,16 @@ export default function App() {
       const raw = localStorage.getItem(LOCAL_CACHE_KEY);
       if (raw) return JSON.parse(raw).rekening || initialDemo.rekening;
     } catch {}
-    return initialDemo.rekening;
+    return {
+      bankUtama: 'BRI',
+      rekUtama: '4108 0100 8396 530',
+      namaUtama: 'Iqbal saefin nuha',
+      bankAlternatif: 'DANA',
+      rekAlternatif: '0858-9026-1536',
+      namaAlternatif: 'Suci K Kusumah',
+      linkPembayaran: '',
+      catatanRekening: '',
+    };
   });
   const [paketList, setPaketList] = useState<PaketLayanan[]>(() => {
     try {
@@ -773,6 +789,7 @@ export default function App() {
           targetOwnerId,
           userRole,
           activeUserName,
+          activeUserEmail,
           cachedAt: existingCachedAt,
           owner,
           rekening,
@@ -783,7 +800,7 @@ export default function App() {
         })
       );
     } catch {}
-  }, [sessionMode, targetOwnerId, userRole, activeUserName, owner, rekening, paketList, jadwalAktif, jadwalArsip, timList]);
+  }, [sessionMode, targetOwnerId, userRole, activeUserName, activeUserEmail, owner, rekening, paketList, jadwalAktif, jadwalArsip, timList]);
 
   // Live Sync Otomatis khusus Paket Ultimate (pada mode Firebase Asli)
   useEffect(() => {
@@ -853,12 +870,14 @@ export default function App() {
       targetOwnerId: string;
       role: UserRoleType;
       displayName: string;
+      email?: string | null;
     },
     isAutoReload = false
   ) => {
     setTargetOwnerId(fbSession.targetOwnerId);
     setUserRole(fbSession.role);
     setActiveUserName(fbSession.displayName);
+    setActiveUserEmail(fbSession.email || '');
     setSessionMode('FIREBASE');
 
     // Cek Role Super Admin di koleksi 'users' ATAU 'owners'
@@ -1598,6 +1617,9 @@ export default function App() {
               {userRole === 'owner' ? 'Owner' : userRole === 'admin' ? 'Admin' : 'Crew'}
             </span>
           </div>
+          {activeUserEmail && (
+            <p className="text-[10px] text-slate-400 font-mono truncate pt-1">{activeUserEmail}</p>
+          )}
         </div>
 
         {/* Card Status Paket (Disembunyikan untuk Anggota / Crew) */}
@@ -1608,7 +1630,7 @@ export default function App() {
             onClick={(e) => {
               e.stopPropagation();
               if (isDrawer) setDrawerOpen(false);
-              setLanggananModalOpen(true);
+              setActiveTab('PENGATURAN');
             }}
             className="mt-3.5 rounded-[12px] p-3 border border-white/20 cursor-pointer hover:border-amber-400 hover:bg-white/10 active:scale-[0.98] transition-all shadow-md group relative"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.35)' }}
@@ -1625,12 +1647,17 @@ export default function App() {
                 AKTIF
               </span>
             </div>
-            <div className="mt-1.5 flex items-center justify-between text-xs">
+            <div className="mt-2 flex items-center justify-between text-xs">
               <span style={{ fontSize: '11px', color: '#ECF0F1' }}>
-                Masa aktif: Sisa {sisaHariLangganan} Hari
+                Saldo: Rp {(owner.saldo || 0).toLocaleString()}
               </span>
+              <span style={{ fontSize: '11px', color: '#ECF0F1' }}>
+                Sisa {sisaHariLangganan} Hari
+              </span>
+            </div>
+            <div className="mt-1.5 text-right">
               <span className="text-[10px] font-black text-amber-300 group-hover:text-amber-200 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-400/40">
-                Perpanjang Paket →
+                Kelola Saldo & Paket →
               </span>
             </div>
           </div>

@@ -109,6 +109,7 @@ export function listenFirebaseAuthState(
       targetOwnerId: string;
       role: UserRoleType;
       displayName: string;
+      email?: string | null;
     } | null
   ) => void
 ): () => void {
@@ -125,13 +126,14 @@ export function listenFirebaseAuthState(
     }
     try {
       const resolved = await resolveUserRoleFromFirestore(fb.db, user.uid, user);
-      callback(resolved);
+      callback({ ...resolved, email: user.email });
     } catch {
       callback({
         uid: user.uid,
         targetOwnerId: user.uid,
         role: 'owner',
         displayName: user.displayName || user.email || 'Owner',
+        email: user.email,
       });
     }
   });
@@ -148,6 +150,7 @@ export async function loginFirebaseWithWA(
   targetOwnerId: string;
   role: UserRoleType;
   displayName: string;
+  email?: string | null;
 }> {
   const fb = initKafelaFirebase();
   if (!fb) {
@@ -159,7 +162,8 @@ export async function loginFirebaseWithWA(
   const cred = await signInWithEmailAndPassword(fb.auth, emailSistem, password);
   const userUid = cred.user.uid;
 
-  return await resolveUserRoleFromFirestore(fb.db, userUid, cred.user);
+  const resolved = await resolveUserRoleFromFirestore(fb.db, userUid, cred.user);
+  return { ...resolved, email: cred.user.email };
 }
 
 /**
@@ -170,6 +174,7 @@ export async function loginFirebaseWithGoogle(): Promise<{
   targetOwnerId: string;
   role: UserRoleType;
   displayName: string;
+  email?: string | null;
 }> {
   const fb = initKafelaFirebase();
   if (!fb) {
@@ -205,6 +210,7 @@ export async function loginFirebaseWithGoogle(): Promise<{
     targetOwnerId: user.uid,
     role: 'owner',
     displayName: user.displayName || 'Owner',
+    email: user.email,
   };
 }
 
@@ -221,6 +227,7 @@ export async function signupFirebaseWithWA(
   targetOwnerId: string;
   role: UserRoleType;
   displayName: string;
+  email?: string | null;
 }> {
   const fb = initKafelaFirebase();
   if (!fb) {
@@ -265,6 +272,7 @@ export async function signupFirebaseWithWA(
     targetOwnerId: uid,
     role: 'owner',
     displayName: namaOwner,
+    email: cred.user.email,
   };
 }
 
